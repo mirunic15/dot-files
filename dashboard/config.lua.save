@@ -1,0 +1,458 @@
+local awful = require("awful")
+local gears = require("gears")
+local wibox = require("wibox")
+local beautiful = require("beautiful")
+local naughty = require("naughty")
+local helpers = require("helpers")
+local dpi = require('beautiful').xresources.apply_dpi
+
+local keygrabber = require("awful.keygrabber")
+
+-- Appearance
+local box_radius = beautiful.dashboard_box_border_radius or dpi(13)
+local box_gap = dpi(6)
+
+-- Get screen geometry
+local screen_width = awful.screen.focused().geometry.width
+local screen_height = awful.screen.focused().geometry.height
+
+-- Create the widget
+dashboard = wibox({visible = false, ontop = true, type = "dock", screen = screen.primary})
+awful.placement.maximize(dashboard)
+
+dashboard.bg = beautiful.dashboard_bg or beautiful.exit_screen_bg or beautiful.wibar_bg or "#111111"
+dashboard.fg = beautiful.dashboard_fg or beautiful.exit_screen_fg or beautiful.wibar_fg or "#FEFEFE"
+
+-- Add dashboard or mask to each screen
+awful.screen.connect_for_each_screen(function(s)
+    if s == screen.primary then
+        s.dashboard = dashboard
+    else
+        s.dashboard = helpers.screen_mask(s, dashboard.bg)
+    end
+end)
+
+local function set_visibility(v)
+    for s in screen do
+        s.dashboard.visible = v
+    end
+end
+
+dashboard:buttons(gears.table.join(
+    -- Middle click - Hide dashboard
+    awful.button({ }, 2, function ()
+        dashboard_hide()
+    end)
+))
+
+-- Helper function that puts a widget inside a box with a specified background color
+-- Invisible margins are added so that the boxes created with this function are evenly separated
+-- The widget_to_be_boxed is vertically and horizontally centered inside the box
+local function create_boxed_widget(widget_to_be_boxed, width, height, bg_color)
+    local box_container = wibox.container.background()
+    box_container.bg = bg_color
+    --box_container.bgimage = "/home/fried-milk/.config/neofetch/pixel-frog.png"
+    box_container.forced_height = height
+    box_container.forced_width = width
+    box_container.border_width = beautiful.border_width
+    box_container.border_color = beautiful.border_color
+    box_container.shape = helpers.rrect(box_radius)
+    -- box_container.shape = helpers.prrect(20, true, true, true, true)
+    -- box_container.shape = helpers.prrect(30, true, true, false, true)
+
+    local boxed_widget = wibox.widget {
+        -- Add margins
+        {
+            -- Add background color
+            {
+                -- Center widget_to_be_boxed horizontally
+                nil,
+                {
+                    -- Center widget_to_be_boxed vertically
+                    nil,
+                    -- The actual widget goes here
+                    widget_to_be_boxed,
+                    layout = wibox.layout.align.vertical,
+                    expand = "none"
+                },
+                layout = wibox.layout.align.horizontal,
+                expand = "none"
+            },
+	    --[[bg = bg_color,
+	    forced_height = height,
+	    forced_width = width,
+	    border_width = dpi(3),
+	    border_color = "#29231d",
+	    shape = helpers.rrect(box_radius),
+	    widget = wibox.container.background,]]
+            widget = box_container,
+        },
+        margins = box_gap,
+        color = "#FF000000",
+        widget = wibox.container.margin
+    }
+
+    return boxed_widget
+end
+
+
+
+-- User widget
+local user_picture_container = wibox.container.background()
+user_picture_container.shape = gears.shape.circle
+user_picture_container.forced_height = dpi(220)
+user_picture_container.forced_width = dpi(220)
+local user_picture = wibox.widget {
+    {
+    	image = "/home/fried-milk/.face",
+        resize = false,
+	clip_shape = gears.shape.circle,
+        valign = "center",
+        halign = "center",
+	forced_width = dpi(170),
+	forced_height = dpi(170),
+	widget = wibox.widget.imagebox	
+    },
+    shape = gears.shape.circle,
+    border_width = beautiful.border_width,
+    border_color = beautiful.c1,
+    bg = beautiful.c2,
+    border_strategy = inner,
+    widget = wibox.container.background,
+    --wibox.widget.imagebox("/home/fried-milk/.face"),
+    --widget = user_picture_container
+}
+local username = os.getenv("USER")
+local user_text = wibox.widget.textbox(username:upper())
+user_text.font = "Charybdis 30"
+user_text.align = "center"
+user_text.valign = "center"
+
+local host_text = wibox.widget.textbox()
+awful.spawn.easy_async_with_shell("hostname", function(out)
+    -- Remove trailing whitespaces
+    out = out:gsub('^%s*(.-)%s*$', '%1')
+    host_text.markup = helpers.colorize_text("@"..out, beautiful.c4)
+end)
+-- host_text.markup = "<span foreground='" .. x.color8 .."'>" .. minutes.text .. "</span>"
+host_text.font = "VT323 20"
+host_text.align = "center"
+host_text.valign = "center"
+local user_widget = wibox.widget {
+    user_picture,
+    helpers.vertical_pad(dpi(18)),
+    user_text,
+    helpers.vertical_pad(dpi(4)),
+    host_text,
+    layout = wibox.layout.fixed.vertical
+}
+local user_box = create_boxed_widget(user_widget, dpi(300), dpi(340), beautiful.c3)
+
+-- Power menu
+local function create_powerm_button(iconz, bg_color, hover_color, cmd_nr)
+    local button_container = wibox.widget {
+	bg = bg_color,
+	forced_height = dpi(100),
+    	forced_width = dpi(100),
+	shape = helpers.rrect(box_radius),
+	widget = wibox.container.background(),
+    }
+
+    local button = wibox.widget {
+	{
+	    {
+	    	image = iconz,
+	    	--resize = false,
+	    	--valign = "center",
+	    	--halign = "center",
+		widget = wibox.widget.imagebox,
+	    },	
+	    margins = dpi(1),
+	    widget = wibox.container.margin,
+	},	
+	widget = button_container,
+    }
+
+    button:buttons(
+        gears.table.join(
+            awful.button({ }, 1, function ()
+                if(cmd_nr == 1) then
+		     awful.spawn.with_shell("poweroff")
+		elseif(cmd_nr == 2) then
+		     awful.spawn.with_shell("reboot")
+		elseif(cmd_nr == 3) then
+   		    awful.spawn.with_shell("env XSECURELOCK_SAVER=saver_xscreensaver XSECURRELOCK_PASSWORD_PROMPT=emoticon XSECURELOCK_SHOW_DATETIME=1 XSECURELOCK_SHOW__USERNAME=1 XSECURELOCK_BLANK_TIMEOUT=10 XSECURELOCK_AUTH_BACKGROUND_COLOR=#3d362d XSECURELOCK_AUTH_FOREGROUND_COLOR=#ffe5c2 XSECURELOCK_AUTH_WARNING_COLOR=#c83bba XSECURELOCK_FONT=VT323 xsecurelock") 
+		elseif (cmd_nr == 4) then
+		    awesome.quit()
+		end
+                dashboard_hide()
+            end)
+    ))
+
+    button:connect_signal("mouse::enter", function ()
+        button_container.bg = hover_color
+    end)
+    button:connect_signal("mouse::leave", function ()
+        button_container.bg = bg_color
+    end)
+
+    return button
+end
+
+-- Create the buttons
+local shutdown = create_powerm_button("/home/fried-milk/.config/awesome/themes/my-first-rice-UWU/titlebar/close_dark.svg", beautiful.c2, beautiful.c1, 1)
+local reboot   = create_powerm_button("/home/fried-milk/.config/awesome/themes/my-first-rice-UWU/titlebar/close_dark.svg", beautiful.c2, beautiful.c1, 2)
+local lock     = create_powerm_button("/home/fried-milk/.config/awesome/themes/my-first-rice-UWU/titlebar/close_dark.svg", beautiful.c2, beautiful.c1, 3)
+local quit     = create_powerm_button("/home/fried-milk/.config/awesome/themes/my-first-rice-UWU/titlebar/close_dark.svg", beautiful.c2, beautiful.c1, 4)
+
+-- Add clickable effects on hover
+helpers.add_hover_cursor(shutdown, "hand1")
+helpers.add_hover_cursor(reboot, "hand1")
+helpers.add_hover_cursor(lock, "hand1")
+helpers.add_hover_cursor(quit, "hand1")
+
+local power_menu = wibox.widget {
+    shutdown,
+    reboot,
+    lock,
+    quit,
+    forced_num_cols = 2,
+    spacing = box_gap * 3,
+    layout = wibox.layout.grid
+}
+
+local power_menu_box = create_boxed_widget(power_menu, dpi(218), dpi(218), "#00000000")
+
+-- Shortcut list
+-- Create list element
+local function create_shortcut_li(cmd, appname, fg_color, hover_color, is_left, icon)
+    local icon_size = dpi(35)
+
+    local appnamew = wibox.widget.textbox()
+    appnamew.font = "Charybdis 25"
+    appnamew.markup = helpers.colorize_text(appname, fg_color)
+
+    local iconw = wibox.widget.imagebox()
+    iconw.image = icon
+    iconw.resize = true
+    iconw.forced_height = icon_size
+    iconw.forced_width  = icon_size 
+
+    local marginw = wibox.container.margin()
+    marginw.forced_width = dpi(200)
+    marginw.left = 10
+    marginw.right = 10
+    marginw.top = 5
+    marginw.bottom = 5
+
+    local li    
+    if is_left then    
+	li = wibox.widget {
+     	    {
+	        {
+	    	    {
+	    	    	halign = "left",
+			valign = "left",
+		    	widget = iconw,
+	    	    },	
+	    	    halign = "left",
+		    widget = wibox.container.place,
+	    	},
+	    	{
+	    	    align = "right",
+		    widget = appnamew,
+	        },	
+	        layout = wibox.layout.align.horizontal
+	    },
+	    widget = marginw,
+    	}
+    else
+	li = wibox.widget {
+	    {
+ 		{
+	    	    align = "left",	
+	    	    widget = appnamew,
+	    	},	
+	    	{
+	    	    {
+	    	        halign = "right",
+			valign = "right",
+		        widget = iconw,
+	    	    },	
+		    halign = "right",
+	    	    widget = wibox.container.place,
+	    	},
+	        layout = wibox.layout.align.horizontal
+    	    },
+	    widget = marginw,
+	}
+    end
+
+    li:buttons(
+        gears.table.join(
+            awful.button({ }, 1, function ()
+                awful.spawn.with_shell(cmd)
+                dashboard_hide()
+            end)
+    ))
+
+    li:connect_signal("mouse::enter", function ()
+        appnamew.markup = helpers.colorize_text(appname, hover_color)
+    end)
+    li:connect_signal("mouse::leave", function ()
+        appnamew.markup = helpers.colorize_text(appname, fg_color)
+    end)
+
+    return li
+end
+
+-- Creat shortcut elements
+local firefox = create_shortcut_li("firefox", "FIREFOX", beautiful.c1, beautiful.c4, true, "/home/fried-milk/.config/neofetch/pixel-frog.png")
+-- the command for tor is stupid
+local tor     = create_shortcut_li("cd / &&  ./opt/tor-browser_en-US/Browser/start-tor-browser", "ONION", beautiful.c1, beautiful.c4, false, "/home/fried-milk/.config/neofetch/pixel-frog.png")
+local spotify = create_shortcut_li("spotify", "SPOTIFY", beautiful.c1, beautiful.c4, true, "/home/fried-milk/.config/neofetch/pixel-frog.png")
+local element = create_shortcut_li("element-desktop", "ELEMENT", beautiful.c1, beautiful.c4, false, "/home/fried-milk/.config/neofetch/pixel-frog.png")
+local discord = create_shortcut_li("discord", "DISCORD", beautiful.c1, beautiful.c4, true, "/home/fried-milk/.config/neofetch/pixel-frog.png")
+
+-- Create shortcut list
+local shortcut_list = wibox.widget{
+    firefox,
+    tor,
+    spotify,
+    element,
+    discord, 
+    layout = wibox.layout.fixed.vertical
+} 
+
+local shortcut_list_box = create_boxed_widget(shortcut_list, dpi(250), dpi(400), beautiful.c3)
+
+-- Clock
+local clock = wibox.widget{
+    {
+	{
+	
+	},
+	margins = 10,
+        widget = wibox.container.margin
+    },
+    bg = beautiful.c3,
+    border_width = beautiful.border_width,
+    border_color = beautiful.border_color,
+    shape = gears.shape.circle,
+    widget = wibox.container.background
+}
+
+
+-- Uptime
+local uptime_text = wibox.widget.textbox()
+awful.widget.watch("uptime -p | sed 's/^...//'", 60, function(_, stdout)
+    -- Remove trailing whitespaces
+    local out = stdout:gsub('^%s*(.-)%s*$', '%1')
+    uptime_text.markup = helpers.colorize_text(out, beautiful.c3)
+end)
+local uptime = wibox.widget {
+    {
+        align = "center",
+        valign = "center",
+        font = "VT323 20",
+        markup = helpers.colorize_text("", "#ffffff"),
+        widget = wibox.widget.textbox()
+    },
+    {
+        align = "center",
+        valign = "center",
+        font = "VT323 17",
+        widget = uptime_text
+    },
+    spacing = dpi(10),
+    layout = wibox.layout.fixed.horizontal
+}
+
+local uptime_box = create_boxed_widget(uptime, dpi(300), dpi(80), beautiful.c2)
+
+uptime_box:buttons(gears.table.join(
+    awful.button({ }, 1, function ()
+        exit_screen_show()
+        gears.timer.delayed_call(function()
+            dashboard_hide()
+        end)
+    end)
+))
+helpers.add_hover_cursor(uptime_box, "hand1")
+
+-- Calendar
+local calendar = require("calendar-widget.calendar")
+-- Update calendar whenever dashboard is shown
+dashboard:connect_signal("property::visible", function ()
+    if dashboard.visible then
+        calendar.date = os.date('*t')
+    end
+end)
+
+local calendar_box = create_boxed_widget(calendar, dpi(350), dpi(400), beautiful.c3)
+-- local calendar_box = create_boxed_widget(calendar, 380, 540, x.color0)
+
+
+-- Item placement
+dashboard:setup {
+    -- Center boxes vertically
+    nil,
+    {
+        -- Center boxes horizontally
+        nil,
+        {
+            -- Column container
+            {
+                -- Column 1
+                user_box,
+                power_menu_box,
+                layout = wibox.layout.fixed.vertical
+            },
+   	    {
+                -- Column 3
+                shortcut_list_box,
+                layout = wibox.layout.fixed.vertical
+            },
+	    {
+		-- Column 4
+		calendar_box,
+		uptime_box,
+		layout = wibox.layout.fixed.vertical
+	    },
+            layout = wibox.layout.fixed.horizontal
+        },
+        nil,
+        expand = "none",
+        layout = wibox.layout.align.horizontal
+
+    },
+    nil,
+    expand = "none",
+    layout = wibox.layout.align.vertical
+}
+
+local dashboard_grabber
+function dashboard_hide()
+    awful.keygrabber.stop(dashboard_grabber)
+    set_visibility(false)
+end
+
+
+local original_cursor = "left_ptr"
+function dashboard_show()
+    -- Fix cursor sometimes turning into "hand1" right after showing the dashboard
+    -- Sigh... This fix does not always work
+    local w = mouse.current_wibox
+    if w then
+        w.cursor = original_cursor
+    end
+    -- naughty.notify({text = "starting the keygrabber"})
+    dashboard_grabber = awful.keygrabber.run(function(_, key, event)
+        if event == "release" then return end
+        -- Press Escape or q or F1 to hide it
+        if key == 'Escape' or key == 'q' or key == 'F1' then
+            dashboard_hide()
+        end
+    end)
+    set_visibility(true)
+end
