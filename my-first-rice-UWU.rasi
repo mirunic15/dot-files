@@ -1,0 +1,202 @@
+/*******************************************************************************
+ * ROFI Color theme
+ * Theme designed to show off moving, packing of widgets, icons and more.
+ * User: fried-milk
+ * Copyright: DaveDavenport, copied off of his theme
+ ********************************************************************************/
+* {
+    foreground:                  rgba ( 255, 226, 194, 100 % );
+    lightfg:                     rgba ( 41, 35, 29, 100 % );
+    normal-foreground:           @foreground;
+    alternate-normal-foreground: @foreground;
+    active-foreground:           rgba ( 166, 226, 42, 100 % );
+    alternate-active-foreground: @active-foreground;
+    urgent-foreground:           rgba ( 249, 38, 114, 100 % );
+    alternate-urgent-foreground: @urgent-foreground;
+    selected-normal-foreground:  rgba ( 200, 59, 186, 100 % );
+    selected-active-foreground:  rgba ( 41, 35, 29, 100 % );
+    selected-urgent-foreground:  rgba ( 41, 35, 29, 100 % );
+
+    background-color:            transparent;
+    background:                  rgba ( 61, 54, 45, 85 % );
+    lightbg:                     rgba ( 169, 221, 164, 100 % );
+    normal-background:           rgba ( 39, 40, 34, 0 % );
+    alternate-normal-background: rgba ( 39, 40, 34, 0 % );
+    active-background:           rgba ( 39, 40, 34, 0 % );
+    alternate-active-background: rgba ( 39, 40, 34, 0 % );
+    urgent-background:           rgba ( 39, 40, 34, 0 % );
+    alternate-urgent-background: rgba ( 39, 40, 34, 0 % );
+    selected-normal-background:  rgba ( 41, 35, 29, 100 % );    
+    selected-active-background:  rgba ( 169, 221, 164, 100 % );
+    selected-urgent-background:  rgba ( 200, 59, 186, 100 % );
+
+    bordercolor:                 rgba ( 41, 35, 29, 100 % );
+    separatorcolor:              rgba ( 255, 229, 194, 100 % );
+}
+window {
+    border-color:     @bordercolor;
+    background-color: transparent;
+    border:           5px;
+    border-radius:    10px;
+    anchor:         north;
+    location:       center;
+    y-offset:       -15.5em;
+
+    children: [ inputbar, message, wrapper-mode-switcher, listview ];
+}
+
+wrapper-mode-switcher {
+    orientation: horizontal;
+    background-color: @background;
+    expand:     false;
+    margin: -13px 0px -2px 0px;
+    padding: 10px 5px 0px;
+    children: [icon-ms-ic1, mode-switcher, icon-ms-ic2];
+}
+icon-ms-ic1 {
+    filename: "go-previous";
+}
+icon-ms-ic2 {
+    filename: "go-next";
+}
+icon-ms-ic1,icon-ms-ic2 {
+    size: 16;
+    vertical-align: 0.4;
+    expand:        false;
+}
+
+mode-switcher {
+    expand: true;
+    border: 0px 0px 3px dash;
+    border-color: @separatorcolor;
+    padding: 0px 0px 5px;
+}
+
+button {
+    padding:      2px;
+    border-color: @separatorcolor;
+    text-color: @lightbg;
+}
+button selected.normal {
+    border-radius: 10px;
+    text-color: @selected-normal-foreground;
+    background-color: @selected-normal-background;
+}
+
+
+sidebar {
+    expand: false;
+}
+
+message {
+    text-color:       @lighfg;
+    background-color: @lightbg;
+    border-color:     @bordercolor;
+    border:           3px;
+    border-radius:    10px;
+    padding:          4px;
+    margin:           0px 0px 0.5em;
+    expand:           false;
+}
+
+listview {
+    spacing:      2px ;
+    scrollbar:    false;
+    padding:      0.1em;
+    background-color: @background;
+    expand:       true;
+    border-color: @separatorcolor;
+}
+element {
+    border-color: transparent;
+    padding: 4px ;
+    border-radius: 50%;
+}
+element.normal.normal {
+    background-color: @normal-background;
+    text-color:       @normal-foreground;
+}
+element.normal.urgent {
+    background-color: @urgent-background;
+    text-color:       @urgent-foreground;
+}
+element.normal.active {
+    background-color: @active-background;
+    text-color:       @active-foreground;
+}
+element.selected.normal {
+    background-color: @selected-normal-background;
+    text-color:       @selected-normal-foreground;
+}
+element.selected.urgent {
+    background-color: @selected-urgent-background;
+    text-color:       @selected-urgent-foreground;
+}
+element.selected.active {
+    background-color: @selected-active-background;
+    text-color:       @selected-active-foreground;
+}
+element.alternate.normal {
+    background-color: @alternate-normal-background;
+    text-color:       @alternate-normal-foreground;
+}
+element.alternate.urgent {
+    background-color: @alternate-urgent-background;
+    text-color:       @alternate-urgent-foreground;
+}
+element.alternate.active {
+    background-color: @alternate-active-background;
+    text-color:       @alternate-active-foreground;
+}
+scrollbar {
+    width:        4px ;
+    handle-width: 8px ;
+}
+sidebar {
+    border:       2px 0px 0px ;
+    border-color: @separatorcolor;
+}
+inputbar {
+    text-color: @lightfg;
+    padding: 0px 0px 0.5em;
+}
+case-indicator {
+    text-color: @normal-foreground;
+}
+
+wrapper {
+    orientation: horizontal;
+    text-color:       @lightfg;
+    background-color: @lightbg;
+    padding: 4px 8px 4px 8px;
+    children:   [icon-k, entry, case-indicator ];
+    spacing:  0.5em;
+}
+case-indicator, prompt {
+    text-color: @lightfg;
+}
+icon-k {
+    expand: false;
+    filename: "input-keyboard";
+    size: 24;
+    content: ">_";
+    font: "VT323 15";
+    text-color: @lightfg;
+    vertical-align: 0.5;
+}
+entry {
+    vertical-align: 0.5;
+}
+inputbar {
+    children:   [ wrapper ];
+}
+
+error-message {
+    background-color: darkred/10%;
+    border-color: darkred;
+    border-radius: 10px;
+    border: 2px;
+    padding: 0.5em;
+
+}
+
