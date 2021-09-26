@@ -55,8 +55,19 @@ end
 local themes_path = os.getenv("HOME") .. "/.config/awesome/themes"
 beautiful.init(themes_path .. "/my-first-rice-UWU/theme.lua")
 
--- EXTRA DIY MODULES
+-- EXTRA MODULES STOLEN FROM THE INTERNET	
 local keys = require("keys")
+local helpers = require("helpers")
+local xresources = require("beautiful.xresources")
+local dpi = xresources.apply_dpi
+local battery_widget = require("battery-widget.battery")
+local keyboard_layout = require("keyboard_layout")
+local spotify_widget = require("spotify-widget.spotify")
+local net_widgets = require("net_widgets")
+require("notifications.volume-notif")
+require("notifications.brightness-notif")
+require("dashboard.config")
+require("weather-widget.weather-evil")
 
 -- DEFAULT APPS
 terminal = "kitty"
@@ -123,12 +134,126 @@ mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
 menubar.utils.terminal = terminal -- Set the terminal for applications that require it
 -- }}}
 
--- Keyboard map indicator and switcher
-mykeyboardlayout = awful.widget.keyboardlayout()
+-- {{{ WIBAR
+-- Date preview widget
+date_widget = wibox.widget{
+    {    
+	image = themes_path .. "/my-first-rice-UWU/taglist/taglist_fill.svg",
+	resize = true,
+        widget = wibox.widget.imagebox,
+    },
+    {    	
+    	format = '%d/%m/%Y  ',
+    	font = beautiful.fancy_font, 
+    	fg = beautiful.chocolate_brown,
+    	widget = wibox.widget.textclock,
+    },
+    layout = wibox.layout.align.horizontal,
+}
 
--- {{{ Wibar
--- Create a textclock widget
-mytextclock = wibox.widget.textclock()
+-- Textclock widget
+time_widget = wibox.widget{
+    {
+	image = themes_path .. "/my-first-rice-UWU/taglist/taglist_fill.svg",
+	resize = true,
+	widget = wibox.widget.imagebox,
+    },
+    {
+        format = '%H:%M  ',
+    	font = beautiful.fancy_font,
+    	widget = wibox.widget.textclock
+    },
+    layout = wibox.layout.align.horizontal,
+}
+
+-- Bluetooth shortcut hopefully
+bluetooth_shortcut = wibox.widget{
+    {
+        {
+	    image = themes_path .. "/my-first-rice-UWU/taglist/taglist_fill.svg",
+	    resize = true,
+	    widget = wibox.widget.imagebox,
+	},
+        margins = 3,
+        widget = wibox.container.margin,
+    },
+    id = "background",
+    bg = beautiful.tasklist_bg_focus,
+    shape_border_width = beautiful.border_width,
+    shape_border_color = beautiful.border_color,
+    shape = helpers.rrect(beautiful.border_radius),
+    widget = wibox.container.background,
+}
+--TODO change to only left click :))
+bluetooth_shortcut:connect_signal("button::press", function() awful.spawn.with_shell("blueman-manager") end)
+
+-- Keyboard layout widget
+local kbdcfg = keyboard_layout.kbdcfg({type = "tui", cmd = "setxkbmap", remember_layout = false})
+kbdcfg.add_primary_layout("English", "US", "us")
+kbdcfg.add_primary_layout("Rumenski", "RO", "ro std")
+kbdcfg.bind()
+
+-- Mouse bindings for keyboard widget
+kbdcfg.widget:buttons(
+ awful.util.table.join(awful.button({ }, 1, function () kbdcfg.switch_next() end),
+                       awful.button({ }, 3, function () kbdcfg.menu:toggle() end))
+)
+
+keyblayout_widget = wibox.widget{
+    {
+        {
+	    kbdcfg.widget,
+	    --widget = wibox.widget.textbox,
+	    layout = wibox.layout.fixed.horizontal
+	},
+        margins = 0,
+        widget = wibox.container.margin,
+    },
+    id = "background",
+    bg = beautiful.tasklist_bg_focus,
+    shape_border_width = beautiful.border_width,
+    shape_border_color = beautiful.border_color,
+    shape = helpers.rrect(beautiful.border_radius),
+    forced_width = 35,
+    widget = wibox.container.background,
+}
+
+-- Spotify widget
+local sp_widget = spotify_widget({
+    font = beautiful.font,
+    play_icon = beautiful.play_icon,
+    pause_icon = beautiful.pause_icon,
+    prev_icon = beautiful.prev_icon,
+    next_icon = beautiful.next_icon,
+    dim_when_paused = false,
+    max_length = 100,
+    show_tooltip = false,
+    max_width = 180,
+    separator_text = " ~ ",
+    text_color = beautiful.c3,
+    separator_color = beautiful.c4,
+    margin_lr = 10,
+    bg = beautiful.taglist_fg_occupied,
+    border_width = beautiful.border_width,
+    border_color = beautiful.border_color,
+    shape = helpers.rrect(beautiful.border_radius),
+    border_radius = beautiful.border_radius,
+    tl = false,
+    tr = false, 
+    tooltip_bg = beautiful.c1,
+    tooltip_fg = beautiful.c3,
+    tooltip_width = 500
+})
+
+--Wifi widget?
+local wifi_widget = net_widgets.wireless({
+    interface = "wlp58s0", 
+    font = beautiful.fancy_font, 
+    popup_signal = false,
+    popup_metrics = true,
+    popup_position = "top_right",
+    onclick = terminal .. "nmtui" --TODO??
+})
 
 -- Create a wibox for each screen and add it
 local taglist_buttons = gears.table.join(
@@ -202,12 +327,37 @@ awful.screen.connect_for_each_screen(function(s)
                            awful.button({ }, 3, function () awful.layout.inc(-1) end),
                            awful.button({ }, 4, function () awful.layout.inc( 1) end),
                            awful.button({ }, 5, function () awful.layout.inc(-1) end)))
+
     -- Create a taglist widget
     s.mytaglist = awful.widget.taglist {
         screen  = s,
         filter  = awful.widget.taglist.filter.all,
         buttons = taglist_buttons,
-	
+	layout  = {
+	    spacing = 10,
+	    spacing_widget = {
+		{
+ 	        color = beautiful.c4,
+		forced_height = 3,
+	        shape = gears.shape.circle,
+                widget = wibox.widget.separator,	
+		},
+		left = 3,
+                right = 3,
+                widget = wibox.container.margin,           
+	    },
+	    layout = wibox.layout.fixed.horizontal,
+	},
+	style = {
+	    shape = helpers.rrect(dpi(7)),
+	    font = beautiful.fancy_font,
+	    bg_focus    = beautiful.taglist_bg_focus,
+	    bg_occupied = beautiful.taglist_bg_occupied,
+	    bg_empty    = beautiful.taglist_bg_empty,
+	    fg_focus    = beautiful.taglist_fg_focus,
+	    fg_empty    = beautiful.taglist_fg_empty,
+	    fg_occupied = beautiful.taglist_fg_occupied,
+ 	},
     }
 
     -- Create a tasklist widget
@@ -215,61 +365,152 @@ awful.screen.connect_for_each_screen(function(s)
  	screen   = s,
     	filter   = awful.widget.tasklist.filter.currenttags,
     	buttons  = tasklist_buttons,
-	style    = {
-	   --border_width = 3,
-	   --border_color = "#ff00d7",
-	   shape = gears.shape.circle
-	},
     	layout   = {
-           spacing = 2,
-           layout  = wibox.layout.fixed.horizontal
+            spacing = 7,
+            layout  = wibox.layout.fixed.horizontal
+	},
+	style = {
+	   font = beautiful.fancy_font,
+	   bg_focus = beautiful.tasklist_bg_focus,
+	   bg_normal = beautiful.tasklist_bg_normal,
+	   shape = helpers.rrect(beautiful.border_radius),
+	   shape_border_width = beautiful.border_width,
+	   shape_border_color = beautiful.border_color
 	},
 	widget_template = {
-	  {
-            {
-                {
-                    {
-                        id     = 'icon_role',
-                        widget = wibox.widget.imagebox,
-                    },
-                    margins = 2,
-                    widget  = wibox.container.margin,
-                },
-                layout = wibox.layout.fixed.horizontal,
-            },
-            left = 5,
-            right = 5,
-            widget = wibox.container.margin
+           {
+               {
+                   id     = 'icon_role',
+                   widget = wibox.widget.imagebox,
+               },
+               margins = 7,
+               widget  = wibox.container.margin,
+           },
+	   id = 'background_role',
+           widget = wibox.container.background,
         },
-        id     = 'background_role',
-        widget = wibox.container.background,
-    },
     }
     
     -- Create the wibox
-    s.mywibox = awful.wibar({ position = "top", screen = s, height = 40 })
+    s.mywibox = awful.wibar({ position = "top",  screen = s, height = 35, bg = "#ff000000" })
 
     -- Add widgets to the wibox
     s.mywibox:setup {
+       -- {    
+            { -- LEFT WIDGETS
+                {
+		    {
+                        --mylauncher,
+			sp_widget,
+                        s.mytasklist,
+                        s.mypromptbox,
+		        layout = wibox.layout.fixed.horizontal,
+		    },
+		    left = 15,
+		    widget = wibox.container.margin,
+		},
+                forced_width = 800,
+                layout = wibox.layout.fixed.horizontal,
+            },
+	    { -- MIDDLE WIDGETS    
+	        {
+                    {
+		        {
+			    {
+		                {
+			            {	
+    	                                s.mytaglist,
+	                                layout = wibox.layout.fixed.horizontal,
+		                    },
+		                    margins = 3,
+	                            widget = wibox.container.margin,
+	                        },
+		                bg = beautiful.taglist_bg_empty,
+		                shape = helpers.rrect(beautiful.border_radius),
+		                shape_border_width = beautiful.border_width,
+	 	                shape_border_color = beautiful.border_color,
+	                        widget = wibox.container.background,
+	                     },	
+			     right = 10,
+			     widget = wibox.container.margin,	
+			},
+		        {
+		            {
+			        {	
+                		    s.mylayoutbox,
+				    layout = wibox.layout.fixed.horizontal,
+		                },
+		                margins = 10,
+	                        widget = wibox.container.margin,
+	                    },
+		            bg = beautiful.tasklist_bg_focus,
+		            shape = helpers.rrect(beautiful.border_radius),
+		            shape_border_width = beautiful.border_width,
+	 	            shape_border_color = beautiful.border_color,
+	                    widget = wibox.container.background,
+	                },
+			layout = wibox.layout.fixed.horizontal,
+		    },
+                    left = 45,
+                    widget = wibox.container.margin,	
+	        },
+		layout = wibox.layout.fixed.horizontal,
+	
+            },
+            { -- RIGHT WIDGETS
+	       	{
+		    {	
+                        bluetooth_shortcut,
+ 			{
+			    {
+                        	keyblayout_widget,
+				layout = wibox.layout.fixed.horizontal,
+			    },
+                            left = 6,
+                            right = 6,
+                            widget = wibox.container.margin,
+			},
+                        {
+		            {   
+			        {	
+    	                            --mykeyboardlayout,
+                		    --wibox.widget.systray(),
+				    battery_widget(),
+				    { 
+				        {
+				    	    wifi_widget, 
+					    layout = wibox.layout.fixed.horizontal,
+					},
+					right = 15,
+                                        widget = wibox.container.margin,
+				    },  			    
+           			    date_widget,
+                                    time_widget,
+              	                    layout = wibox.layout.fixed.horizontal,
+		                },
+		                margins = 3,
+	                        widget = wibox.container.margin,
+	                    },
+		            bg = beautiful.taglist_bg_empty,
+		            shape = helpers.rrect(beautiful.border_radius),
+		            shape_border_width = beautiful.border_width,
+	 	            shape_border_color = beautiful.border_color,
+	                    widget = wibox.container.background,
+	                },
+                        layout = wibox.layout.fixed.horizontal,
+		    },
+                    right = 15,
+                    widget = wibox.container.margin,	
+	        },
+		layout = wibox.layout.fixed.horizontal,
+            },
         layout = wibox.layout.align.horizontal,
-        { -- LEFT WIDGETS
-            layout = wibox.layout.fixed.horizontal,
-            mylauncher,
-            s.mytasklist,
-            s.mypromptbox,
-        },
-	{ -- MIDDLE WIDGETS :(( not centered
-            layout = wibox.layout.flex.horizontal,
-            s.mytaglist,
-	},
-        { -- RIGHT WIDGETS
-            layout = wibox.layout.fixed.horizontal,
-            mykeyboardlayout,
-            wibox.widget.systray(),
-            mytextclock,
-            s.mylayoutbox,
-        },
     }
+    -- Place bar at the top and add margins
+    awful.placement.top(s.mywibox, {margins = 5})
+    -- Also add some screen padding so that clients do not stick to the bar
+    s.padding = { top = 0}
+
 end)
 -- }}}
 
@@ -279,7 +520,7 @@ awful.rules.rules = {
     -- All clients will match this rule.
     { rule = { },
       properties = { border_width = beautiful.border_width,
-                     border_color = beautiful.border_normal,
+                     border_color = beautiful.border_color,
                      focus = awful.client.focus.filter,
                      raise = true,
                      keys = keys.clientkeys,
@@ -346,6 +587,35 @@ client.connect_signal("manage", function (c)
     end
 end)
 
+-- (heavily improvised) maximized clients dont go into semi-fullscreen
+client.connect_signal("property::maximized", function(c)
+    if (c.maximized==true) then
+	c.height = dpi(1015) 
+	c.width = dpi(1890)
+	c.y = 47
+	c.x = 12
+        c.floating = false
+    end
+end)
+
+
+-- Changing spotify notifications.
+naughty.config.presets.spotify = { 
+    -- if you want to disable Spotify notifications completely, return false
+    callback = function(args)
+        return false
+    end,
+
+    -- Adjust the size of the notification
+    height = 100,
+    width  = 400,
+    -- Guessing the value, find a way to fit it to the proper size later
+    icon_size = 90
+}
+table.insert(naughty.dbus.config.mapping, {{appname = "Spotify"}, naughty.config.presets.spotify})
+
+
+--TITLEBAR
 -- Add a titlebar if titlebars_enabled is set to true in the rules.
 client.connect_signal("request::titlebars", function(c)
     -- buttons for the titlebar
@@ -360,26 +630,49 @@ client.connect_signal("request::titlebars", function(c)
         end)
     )
 
+    
+    --[[awful.titlebar(c,{
+        --properties??
+        size = 5,
+	position = "right",
+	bg_normal = beautiful.border_color,
+	bg_focus = beautiful.border_color,
+    })
+
+    awful.titlebar(c,{
+        --properties??
+        size = 5,
+	position = "bottom",
+	bg_normal = beautiful.border_color,
+	bg_focus = beautiful.border_color,
+    })]]
+
     awful.titlebar(c,
 	           {--properties??
-                    size = 30,
+                    size = 28,
+		    position = "top",
                    }
     ) : setup {
         { -- Left
-            awful.titlebar.widget.iconwidget(c),
+	    {
+                {
+                    widget = awful.titlebar.widget.iconwidget(c),
+                },
+                left = 5,
+                right = 5,
+                top = 2,
+                bottom = 2,
+                widget = wibox.container.margin,
+            },
 	    { -- TITLE
               align = "left",
-	      font = "Neon Pixel-7 12",
+	      font = "VT323 15",
               widget = awful.titlebar.widget.titlewidget(c)
             },
             buttons = buttons,
             layout  = wibox.layout.fixed.horizontal
         },
         { -- Middle
-           -- { -- Title
-           --     align  = "center",
-           --     widget = awful.titlebar.widget.titlewidget(c)
-           -- },
             buttons = buttons,
             layout  = wibox.layout.flex.horizontal
         },
@@ -387,19 +680,26 @@ client.connect_signal("request::titlebars", function(c)
             awful.titlebar.widget.floatingbutton (c),
             awful.titlebar.widget.maximizedbutton(c),
             awful.titlebar.widget.stickybutton   (c),
-           -- awful.titlebar.widget.ontopbutton    (c),
+            awful.titlebar.widget.ontopbutton    (c),
+	    awful.titlebar.widget.minimizebutton (c),
             awful.titlebar.widget.closebutton    (c),
+	    --[[{
+		color = beautiful.border_color,
+	        shape = helpers.rrect(0),
+		forced_width = 5,
+		widget = wibox.widget.separator,
+	    },]]
             layout = wibox.layout.fixed.horizontal()
         },
         layout = wibox.layout.align.horizontal
     }
+
 end)
 
 -- Enable sloppy focus, so that focus follows mouse.
 client.connect_signal("mouse::enter", function(c)
     c:emit_signal("request::activate", "mouse_enter", {raise = false})
 end)
-
 client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
