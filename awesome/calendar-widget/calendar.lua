@@ -17,12 +17,15 @@ styles.normal  = {}
 styles.focus   = { 
     fg_color = beautiful.c1,
     bg_color = beautiful.c4,
+    valign = 'center',
+    halign = 'center',
+    align = 'center',
     shape = gears.shape.circle,
     markup   = function(t) return '<b>' .. t .. '</b>' end,
 }
 
 styles.header  = { 
-    fg_color = beautiful.c2v2,
+    fg_color = beautiful.c2,
     bg_color = "#ff000000",
     --markup   = function(t) return '<b>' .. t .. '</b>' end,
     markup   = function(t) return '<span font_desc="Charybdis 30">' .. t .. '</span>' end,

@@ -11,14 +11,14 @@ local key = "3a441842458d17ec59771c603d488b67"
 local city_id = "683506"
 local units = "metric"
 -- Don't update too often, because your requests might get blocked for 24 hours
-local update_interval = 5000
+local update_interval = 1200
 local temp_file = "/tmp/awesomewm-evil-weather-"..city_id.."-"..units
 
 local weather_details_script = [[
     bash -c '
-    --KEY="]]..key..[["
-    --CITY="]]..city_id..[["
-    --UNITS="]]..units..[["
+    KEY="]]..key..[["
+    CITY="]]..city_id..[["
+    UNITS="]]..units..[["
     weather=$(curl -sf "http://api.openweathermap.org/data/2.5/weather?appid=3a441842458d17ec59771c603d488b67&id=683506&units=metric")
     if [ ! -z "$weather" ]; then
         weather_temp=$(echo "$weather" | jq ".main.temp" | cut -d "." -f 1)

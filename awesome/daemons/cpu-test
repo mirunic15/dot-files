@@ -1,0 +1,4 @@
+temp=$(sensors | grep "id 0" | cut -c16-25)
+usage=$(grep "cpu " /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage "%"}')
+echo "$temp" "$usage"
+

@@ -68,6 +68,8 @@ require("notifications.volume-notif")
 require("notifications.brightness-notif")
 require("dashboard.config")
 require("weather-widget.weather-evil")
+require("disk-widget.disk-evil")
+require("daemons.cpu")
 
 -- DEFAULT APPS
 terminal = "kitty"

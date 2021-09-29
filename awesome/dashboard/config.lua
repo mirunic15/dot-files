@@ -14,7 +14,7 @@ local box_gap = dpi(6)
 
 -- Column widhts
 local col1 = 300
-local col2 = 300
+local col2 = 240
 local col3 = 240
 local col4 = 350
 
@@ -84,13 +84,6 @@ local function create_boxed_widget(widget_to_be_boxed, width, height, bg_color)
                 layout = wibox.layout.align.horizontal,
                 expand = "none"
             },
-	    --[[bg = bg_color,
-	    forced_height = height,
-	    forced_width = width,
-	    border_width = dpi(3),
-	    border_color = "#29231d",
-	    shape = helpers.rrect(box_radius),
-	    widget = wibox.container.background,]]
             widget = box_container,
         },
         margins = box_gap,
@@ -106,27 +99,20 @@ end
 -- User widget
 local user_picture_container = wibox.container.background()
 user_picture_container.shape = gears.shape.circle
-user_picture_container.forced_height = dpi(220)
-user_picture_container.forced_width = dpi(220)
+user_picture_container.border_width = beautiful.border_width
+user_picture_container.boder_color = beautiful.border_color
 local user_picture = wibox.widget {
     {
     	image = "/home/fried-milk/.face",
         resize = false,
-	clip_shape = gears.shape.circle,
+	    clip_shape = gears.shape.circle,
         valign = "center",
         halign = "center",
-	forced_width = dpi(170),
-	forced_height = dpi(170),
-	widget = wibox.widget.imagebox	
+	    forced_width = dpi(170),
+	    forced_height = dpi(170),
+	    widget = wibox.widget.imagebox	
     },
-    shape = gears.shape.circle,
-    border_width = beautiful.border_width,
-    border_color = beautiful.c1,
-    bg = beautiful.c2,
-    border_strategy = inner,
-    widget = wibox.container.background,
-    --wibox.widget.imagebox("/home/fried-milk/.face"),
-    --widget = user_picture_container
+    widget = user_picture_container,
 }
 local username = os.getenv("USER")
 local user_text = wibox.widget.textbox(username:upper())
@@ -189,15 +175,15 @@ local function create_powerm_button(iconz, width, bg_color, hover_color, cmd_nr)
         gears.table.join(
             awful.button({ }, 1, function ()
                 if(cmd_nr == 1) then
-		     awful.spawn.with_shell("poweroff")
-		elseif(cmd_nr == 2) then
-		     awful.spawn.with_shell("reboot")
-		elseif(cmd_nr == 3) then
-   		    awful.spawn.with_shell("env XSECURELOCK_SAVER=saver_xscreensaver XSECURRELOCK_PASSWORD_PROMPT=emoticon XSECURELOCK_SHOW_DATETIME=1 XSECURELOCK_SHOW__USERNAME=1 XSECURELOCK_BLANK_TIMEOUT=10 XSECURELOCK_AUTH_BACKGROUND_COLOR=#3d362d XSECURELOCK_AUTH_FOREGROUND_COLOR=#ffe5c2 XSECURELOCK_AUTH_WARNING_COLOR=#c83bba XSECURELOCK_FONT=VT323 xsecurelock") 
-		elseif (cmd_nr == 4) then
-		    awesome.quit()
-		end
-                dashboard_hide()
+		            awful.spawn.with_shell("poweroff")
+		        elseif(cmd_nr == 2) then
+		            awful.spawn.with_shell("reboot")
+		        elseif(cmd_nr == 3) then
+   		            awful.spawn.with_shell("env XSECURELOCK_SAVER=saver_xscreensaver XSECURRELOCK_PASSWORD_PROMPT=emoticon XSECURELOCK_SHOW_DATETIME=1 XSECURELOCK_SHOW__USERNAME=1 XSECURELOCK_BLANK_TIMEOUT=10 XSECURELOCK_AUTH_BACKGROUND_COLOR=#3d362d XSECURELOCK_AUTH_FOREGROUND_COLOR=#ffe5c2 XSECURELOCK_AUTH_WARNING_COLOR=#c83bba XSECURELOCK_FONT=VT323 xsecurelock") 
+		        elseif (cmd_nr == 4) then
+		            awesome.quit()
+		        end
+                    dashboard_hide()
             end)
     ))
 
@@ -227,7 +213,6 @@ local power_menu = wibox.widget {
     {
         shutdown,
         reboot,
-        --lock,
         quit,
         forced_num_cols = 3,
         spacing = box_gap * 2.5,
@@ -249,44 +234,147 @@ local power_menu_box = create_boxed_widget(power_menu, col1, dpi(200), "#0000000
 -- Weather widget with text icons
 local weather_widget = require("weather-widget.weather-content")
 local weather_widget_icon = weather_widget:get_all_children()[1]
--- weather_widget_icon.font = "Typicons 18"
-weather_widget_icon.font = "icomoon 16"
+weather_widget_icon.font = "icomoon 40"
 weather_widget_icon.align = "center"
 weather_widget_icon.valign = "center"
 -- So that content does not get cropped
 -- weather_widget_icon.forced_width = dpi(50)
 local weather_widget_description = weather_widget:get_all_children()[2]
-weather_widget_description.font = "sans medium 14"
+weather_widget_description.font = "VT323 30"
 local weather_widget_temperature = weather_widget:get_all_children()[3]
-weather_widget_temperature.font = "sans medium 14"
+weather_widget_temperature.font = "Charybdis 40"
 
 local weather = wibox.widget{
-    {
-        nil,
-        weather_widget_description,
-        expand = "none",
-        layout = wibox.layout.align.horizontal
-    },
     {
         nil,
         {
             weather_widget_icon,
             weather_widget_temperature,
             spacing = dpi(5),
-            layout = wibox.layout.fixed.horizontal
+            layout = wibox.layout.align.horizontal
         },
+        expand = "none",
+        layout = wibox.layout.align.horizontal
+    },
+    {
+        nil,
+        weather_widget_description,
         expand = "none",
         layout = wibox.layout.align.horizontal
     },
     spacing = dpi(5),
     layout = wibox.layout.fixed.vertical
-    -- nil,
-    -- weather_widget,
-    -- layout = wibox.layout.align.horizontal,
-    -- expand = "none"
 }
 
-local weather_box = create_boxed_widget(weather, col2, dpi(200), beautiful.c3)
+local weather_box = create_boxed_widget(weather, col2, 560-col2-smol_botton-2.65*box_gap, beautiful.c3)
+  
+-- CPU widget
+local cpu_widget = require("widgets.cpu-widget")
+local cpu_widget_caption = cpu_widget:get_all_children()[1]
+cpu_widget_caption.font = "VT323 25"
+local cpu_widget_temp = cpu_widget:get_all_children()[2]
+cpu_widget_temp.font = "VT323 20"
+local cpu_widget_usage = cpu_widget:get_all_children()[3]
+cpu_widget_usage.font = "VT323 20"
+
+local cpu = wibox.widget{
+    cpu_widget_caption,
+    {
+        cpu_widget_temp,
+        cpu_widget_usage,
+        layout = wibox.layout.fixed.vertical,
+    },
+    layout = wibox.layout.fixed.horizontal,
+}
+
+local cpu_box = create_boxed_widget(cpu, col2, col1/3-1.5*box_gap, beautiful.c3)
+
+-- Disk Widget
+local disk_arc = wibox.widget {
+    start_angle = 3 * math.pi / 2,
+    min_value = 0,
+    max_value = 100,
+    value = 50,
+    border_width = 0,
+    border_color = beautiful.border_color,
+    thickness = dpi(25),
+    forced_width = dpi(50),
+    forced_height = dpi(50),
+    rounded_edge = true,
+    bg = beautiful.c3.."bf",
+    colors = { beautiful.c4 },
+    widget = wibox.container.arcchart
+}
+
+local disk_hover_text_value = wibox.widget {
+    align = "center",
+    valign = "center",
+    font = "Charybdis 25",
+    widget = wibox.widget.textbox()
+}
+local disk_hover_text = wibox.widget {
+    disk_hover_text_value,
+    {
+        align = "center",
+        valign = "center",
+        font = "VT323 25",
+        markup = helpers.colorize_text("free", beautiful.c3),
+        widget = wibox.widget.textbox,
+    },
+    spacing = dpi(2),
+    visible = false,
+    layout = wibox.layout.fixed.vertical
+}
+
+awesome.connect_signal("evil::disk", function(used, total)
+    disk_arc.value = -used * 100 / total
+    disk_hover_text_value.markup = helpers.colorize_text(tostring(helpers.round(total - used, 1)).."G", beautiful.c3)
+end)
+
+local disk_icon = wibox. widget {
+    align = "center",
+    valign = "center",
+    font = "icomoon 40",
+    markup = helpers.colorize_text("", beautiful.c3),
+    widget = wibox.widget.textbox()
+}
+
+local disk = wibox.widget {
+    {
+        {
+            {
+                nil,
+                disk_hover_text,
+                expand = "none",
+                layout = wibox.layout.align.vertical
+            },
+            disk_icon,
+            disk_arc,
+            top_only = false,
+            layout = wibox.layout.stack
+        },
+        margins = 20,
+        widget = wibox.container.margin,
+    },
+    bg = beautiful.c2,
+    shape = gears.shape.circle,
+    border_width = beautiful.border_width,
+    border_color = beautiful.border_color,
+    forced_height = col2,
+    forced_width = col2,
+    widget = wibox.container.background
+}
+
+local disk_box = create_boxed_widget(disk, col2, col2, beautiful.c3.."00")
+
+disk_box:connect_signal("mouse::enter", function ()
+    disk_icon.visible = false
+    disk_hover_text.visible = true
+end)
+disk_box:connect_signal("mouse::leave", function ()
+    disk_icon.visible = true
+    disk_hover_text.visible = false
+end)
 
 -- Shortcut list
 -- Create list element
@@ -313,42 +401,42 @@ local function create_shortcut_li(cmd, appname, fg_color, hover_color, is_left, 
     local li    
     if is_left then    
 	li = wibox.widget {
-     	    {
+        {
 	        {
 	    	    {
 	    	    	halign = "left",
-			valign = "left",
-		    	widget = iconw,
+			        valign = "left",
+		    	    widget = iconw,
 	    	    },	
 	    	    halign = "left",
-		    widget = wibox.container.place,
+		        widget = wibox.container.place,
 	    	},
 	    	{
 	    	    align = "right",
-		    widget = appnamew,
+		        widget = appnamew,
 	        },	
 	        layout = wibox.layout.align.horizontal
 	    },
 	    widget = marginw,
-    	}
+    }
     else
 	li = wibox.widget {
 	    {
- 		{
+ 		    {
 	    	    align = "left",	
 	    	    widget = appnamew,
 	    	},	
 	    	{
 	    	    {
 	    	        halign = "right",
-			valign = "right",
-		        widget = iconw,
+			        valign = "right",
+		            widget = iconw,
 	    	    },	
-		    halign = "right",
+		        halign = "right",
 	    	    widget = wibox.container.place,
 	    	},
 	        layout = wibox.layout.align.horizontal
-    	    },
+    	},
 	    widget = marginw,
 	}
     end
@@ -392,18 +480,39 @@ local shortcut_list = wibox.widget{
     layout = wibox.layout.fixed.vertical
 } 
 
-local shortcut_list_box = create_boxed_widget(shortcut_list, col3, dpi(320), beautiful.c3)
+local shortcut_list_box = create_boxed_widget(shortcut_list, col3, 320-0.5*box_gap, beautiful.c3)
 
 -- Clock
 local textclock = wibox.widget.textclock()
 textclock.format = '%H:%M:%S'
-textclock.refresh = 600
-textclock.font = 'Charybdis 30'
+textclock.refresh = 100
+textclock.font = 'Charybdis 29'
+textclock.valign = 'center'
+textclock.align = 'center'
+
+local clock_arc = wibox.widget{
+    start_angle = 1.5*math.pi,
+    min_value = 0,
+    max_value = 60,
+    value = 30,
+    border_width = 0,
+    border_color = beautiful.border_color,
+    thickness = dpi(25),
+    forced_width = dpi(200),
+    forced_height = dpi(200),
+    rounded_edge = true,
+    bg = beautiful.c3.."bf",
+    colors = { beautiful.c4 },
+    widget = wibox.container.arcchart
+}
 
 local clock = wibox.widget{
     {
         {
-            widget = textclock,
+            textclock,
+            clock_arc,  
+            top_only = false,
+            layout = wibox.layout.stack
         },    
         valign = "center",
         halign = "center",
@@ -416,6 +525,18 @@ local clock = wibox.widget{
     forced_width = col3,
     shape = gears.shape.circle,
     widget = wibox.container.background
+}
+
+local clock_timer
+clock_timer = gears.timer {
+    timeout = 1,
+    autostart = false,
+    call_now = false,
+    single_shot = false,
+    callback = function()
+        textclock.markup = helpers.colorize_text(os.date('%H:%M:%S'), beautiful.c3)
+        clock_arc.value = tonumber(os.date('%S'))
+    end
 }
 
 local clock_box = create_boxed_widget(clock, col3, col3, "#00000000")
@@ -431,21 +552,25 @@ local uptime = wibox.widget {
     {
         align = "center",
         valign = "center",
-        font = "VT323 20",
-        markup = helpers.colorize_text("", "#ffffff"),
+        font = "VT323 40",
+        forced_width = col4/2-70,
+        markup = helpers.colorize_text("", beautiful.c4),
         widget = wibox.widget.textbox()
     },
     {
         align = "center",
         valign = "center",
-        font = "VT323 17",
+        font = "VT323 25",
+        wrap = "word",
+        forced_width =col4/2,
+        align = "right",
         widget = uptime_text
     },
-    spacing = dpi(10),
+    --spacing = dpi(10),
     layout = wibox.layout.fixed.horizontal
 }
 
-local uptime_box = create_boxed_widget(uptime, col4, dpi(160), beautiful.c2)
+local uptime_box = create_boxed_widget(uptime, col4, 160-0.55*box_gap, beautiful.c2)
 
 uptime_box:buttons(gears.table.join(
     awful.button({ }, 1, function ()
@@ -488,6 +613,8 @@ dashboard:setup {
             {
                 -- Column 2
                 weather_box,
+                disk_box,
+                cpu_box,
                 layout = wibox.layout.fixed.vertical
             },
    	        {
@@ -516,7 +643,8 @@ dashboard:setup {
 
 local dashboard_grabber
 function dashboard_hide()
-    textclock.refresh=600
+    --textclock.refresh=600
+    clock_timer:stop()
     awful.keygrabber.stop(dashboard_grabber)
     set_visibility(false)
 end
@@ -539,7 +667,7 @@ function dashboard_show()
         end
     end)
     
-    textclock.refresh=1
-
+    --textclock.refresh=1
+    clock_timer:start()
     set_visibility(true)
 end
